@@ -55,6 +55,7 @@
 #      0.1.7    Added test option
 #      0.1.8    Added Support for LUN names without HEX-ID (e.g. iSCSI LUNs)
 #      0.1.9    Added extraconfig option
+#      0.1.10   Added support for LUN names without HEX-ID on SLES10
 
 
 use strict;
@@ -381,6 +382,22 @@ $SIG{__WARN__} = sub { push @perl_warnings, [@_]; };
 ."  `- 10:0:0:1 sdd 8:48 failed faulty running\n",
 
 
+#25. SLES10 LUN with HEX-ID (iSCSI to EMC Clariion)
+<<'EOR'
+360060160ed311c000283e404e0d3db11DGC,RAID 5
+[size=2048G][features=1 queue_if_no_path][hwhandler=1 emc]
+\_ round-robin 0 [prio=0][active]
+ \_ 2:0:0:0  sdb 8:16  [active][undef]
+ \_ 6:0:0:0  sdf 8:80  [active][undef]
+ \_ 12:0:0:0 sdl 8:176 [active][undef]
+ \_ 16:0:0:0 sdp 8:240 [active][undef]
+\_ round-robin 0 [prio=0][enabled]
+ \_ 5:0:0:0  sde 8:64  [active][undef]
+ \_ 9:0:0:0  sdi 8:128 [active][undef]
+ \_ 11:0:0:0 sdk 8:160 [active][undef]
+ \_ 15:0:0:0 sdo 8:224 [active][undef]
+EOR
+,
 
     );
 
@@ -634,6 +651,16 @@ sub report {
 
 #---------------------------------------
 #
+# Return SLES version, or undef if we're not on SLES
+#
+sub sles_ver {
+    my $cmd = qx(rpm -q sles-release --qf '%{version}' 2> /dev/null);
+    return undef if $? != 0;
+    return $cmd;
+}
+
+#---------------------------------------
+#
 # Give an error and exit with unknown state
 #
 sub unknown_error {
@@ -675,7 +702,9 @@ sub get_multipath_text {
 	    # if no multipath driver found just set empty string (no LUNs)
 	    if ( $output =~ m/multipath kernel driver not loaded/ ) {
 		$output = "";
-	    } else {
+	    } elsif (sles_ver() == 10) {
+            # On SLES 10 multipath always seems to exit with status code 1
+        } else {
 		if ($< != 0) {
 		    # (root) NOPASSWD: /sbin/multipath -l
 		    my $sudoListCommand = "$SUDO -l 2>/dev/null";
@@ -734,6 +763,11 @@ sub checkLunLine {
     elsif ($textLine =~ m/^([\w\-]+) \s+ [a-z]+\-\d+ \s+ [\w\-\,]+/x) {
 	$$rCurrentLun = $1;                           # do initialisations for new LUN
 	#report("LUN without HEX-ID $$rCurrentLun found", $E_OK);
+	$$rLunPaths{$$rCurrentLun} = 0;
+	return 1;
+    }
+    elsif ($textLine =~ m/^([^,]+),/x) {
+	$$rCurrentLun = $1;
 	$$rLunPaths{$$rCurrentLun} = 0;
 	return 1;
     }

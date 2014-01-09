@@ -81,6 +81,7 @@ my @expectedTextOutput = (
 "W: LUN tex-lun4: less than 4 paths (2/4).;W: LUN tex-lun3: less than 4 paths (2/4).;",
 "W: LUN 1STORAGE_server_target2: less than 4 paths (2/4).;",
 "C: LUN 1STORAGE_server_target2: less than 2 paths (1/4)!;W: LUN 1STORAGE_server_target2, path sdd: ERROR.;",
+"O: LUN 360060160ed311c000283e404e0d3db11DGC: 8/4.;",
     );
 
 my @expectedReturnCode = ( 42,
@@ -88,7 +89,7 @@ my @expectedReturnCode = ( 42,
                            $E_CRITICAL, $E_CRITICAL,  $E_CRITICAL, $E_WARNING,  $E_UNKNOWN,
 			   $E_UNKNOWN,  $E_UNKNOWN,   $E_UNKNOWN,  $E_OK,       $E_CRITICAL,
 			   $E_CRITICAL, $E_CRITICAL,  $E_OK,       $E_WARNING,  $E_OK,
-			   $E_CRITICAL, $E_WARNING,   $E_WARNING,  $E_CRITICAL,
+			   $E_CRITICAL, $E_WARNING,   $E_WARNING,  $E_CRITICAL, $E_OK,
     );
 
 
